@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import InsightPemasukan from './insightpemasukan';
-import InsightPengeluaran from './insightpengeluaran'; 
+import InsightPemasukan from './insightPemasukan';
+import InsightPengeluaran from './insightPengeluaran'; 
 
 export default function Insight({ onNavigate, onLogout }) {
   const [subPage, setSubPage] = useState('menu');
