@@ -2,21 +2,21 @@ import axios from 'axios';
 
 // 1. Buat instance konfigurasi dasar Axios
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // Mengambil URL dari file .env tadi
-  timeout: 10000, // Jika server tidak merespon dalam 10 detik, batalkan (mencegah loading selamanya)
+  // Kita langsung arahkan ke server Laravel kamu yang berjalan di port 8000
+  baseURL: 'http://127.0.0.1:8000/api', 
+  timeout: 10000, 
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-  }
+  },
 });
 
-// 2. Interceptor (Opsional tapi Sangat Penting untuk Otentikasi/Login)
-// Fungsi ini otomatis menempelkan Token JWT di setiap request jika User sudah login
+// 2. Interceptor (Otomatis menempelkan Token JWT di setiap request)
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token'); // Mengambil token yang disimpan saat login
+    const token = localStorage.getItem('token'); 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Menempelkan token ke header
+      config.headers.Authorization = `Bearer ${token}`; 
     }
     return config;
   },
@@ -25,4 +25,4 @@ API.interceptors.request.use(
   }
 );
 
-export default API;
+export default API; // Pastikan ada export default agar bisa dipakai di file lain

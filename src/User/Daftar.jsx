@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import API from '../api/axiosConfig';
 
 export default function Daftar({ onBack, onNext }) {
   const [username, setUsername] = useState('');

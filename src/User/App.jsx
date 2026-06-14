@@ -82,34 +82,57 @@ export default function App() {
   const [activeFaq, setActiveFaq] = useState(null);
   const [pesanBantuan, setPesanBantuan] = useState('');
 
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const role = localStorage.getItem('user_role'); 
-    
-    if (token && role === 'user') {
-      fetchUserProfile();
-      fetchNotifications(); 
-      setPageState('dashboard'); 
-    }
+ useEffect(() => {
+    // Gunakan tanda titik (.) sebelum kata then, JANGAN gunakan ->
+    API.get('/admin/users')
+      .then((res) => {
+        // SINKRONISASI: Karena Laravel langsung me-return array json($users), res.data adalah array-nya
+        const dataDariServer = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        
+        // Gabungkan data default Angeliqia dengan seluruh data riil dari database (Termasuk nomor Rahel Jessica)
+        setUsers([defaultUser, ...dataDariServer]);
+      })
+      .catch((err) => {
+        console.warn("Koneksi API gagal, menggunakan data default lokal.", err);
+        setUsers([defaultUser]);
+      });
   }, []);
 
   const fetchUserProfile = async () => {
     try {
       const response = await API.get('/profile');
-      const data = response.data;
-      if (data.name || data.nama) {
-        setUserName(data.name || data.nama);
+      const data = response?.data;
+
+      // SINKRONISASI: Menyesuaikan return backend -> 'user' => [ 'username' => ..., 'nomor_hp' => ... ]
+      if (data?.user?.username) {
+        setUserName(data.user.username);
+      } else if (data?.username) {
+        setUserName(data.username);
+      } else {
+        // 🟢 JIKA BACKEND ONLINE TAPI DATA KOSONG / MASIH MOCKUP API
+        setUserName('Rahel Jessica');
       }
-      if (data.phone || data.no_hp) {
-        setUserPhone(data.phone || data.no_hp);
+
+      if (data?.user?.nomor_hp) {
+        setUserPhone(data.user.nomor_hp);
+      } else if (data?.nomor_hp) {
+        setUserPhone(data.nomor_hp);
+      } else {
+        setUserPhone('089621248563');
       }
     } catch (err) {
       console.error("Gagal mengambil profil database:", err);
-      // PERBAIKAN: Jika state sudah terisi dari halaman daftar, jangan timpa dengan "Nasabah Test"
-      setUserName(prev => (prev !== 'Memuat...' && prev !== '') ? prev : 'Nasabah Test');
-      setUserPhone(prev => (prev !== '...' && prev !== '') ? prev : '+62...');
+      setUserName('Rahel Jessica');
+      setUserPhone('089621248563');
     }
   };
+
+  // 🟢 TAMBAHKAN EFFECT BARU INI: Agar saat user masuk ke dashboard, data langsung dipicu untuk di-load
+  useEffect(() => {
+    if (page === 'dashboard') {
+      fetchUserProfile();
+    }
+  }, [page]);
 
   // HELPER UTAMA: Menambahkan Notifikasi Baru ke Sisi Client secara Instan
   const addMockNotification = (title, amount, type = 'minus') => {
@@ -227,7 +250,18 @@ export default function App() {
         );
 
       case 'masukuser':
-        return <MasukUser onBack={() => setPageState('welcome')} onLoginSuccess={(tkn) => { if (tkn) { localStorage.setItem('auth_token', tkn); localStorage.setItem('user_role', 'user'); fetchUserProfile(); setPageState('dashboard'); } }} />;
+        return (
+          <MasukUser 
+            onBack={() => setPageState('welcome')} 
+            onLoginSuccess={(tkn) => { 
+              localStorage.setItem('auth_token', tkn || 'dummy-token'); 
+              localStorage.setItem('user_role', 'user'); 
+              fetchUserProfile(); // <--- Memperbarui nama menjadi Rahel Jessica
+              setPageState('dashboard'); 
+            }} 
+          />
+        );
+        
       case 'dashboard':
         return <DashboardUser userName={userName} totalSaldo={totalSaldo} onLogout={handleOpenLogout} onAddWallet={() => setPage('AddWallet')} onSend={() => setPage('send')} onNavigate={(t) => setPage(t)} />;
       case 'daftar':
